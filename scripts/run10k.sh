@@ -12,6 +12,7 @@ go run background.go config10k.json
 
 go run subtract.go config10k.json
 
+go run pivot.go config10k.json vis_adjusted
 go run pivot.go config10k.json vis_observed
 go run pivot.go config10k.json background
 go run pivot.go config10k.json nvalid

@@ -31,7 +31,7 @@ const (
 	// Flush each buffer to disk when it becomes this large.
 	// There are ~8000 buffers (one for each date), so the total
 	// memory used by these buffers is ~8000 * bufsize.
-	bufsize int = 100000
+	bufsize int = 800000
 )
 
 type mode_type int
@@ -43,6 +43,7 @@ const (
 
 func drain_buffers(buffers map[string]*bytes.Buffer, basepath string, final bool) {
 
+	ndrain := 0
 	for ky, va := range buffers {
 
 		if !final {
@@ -51,7 +52,9 @@ func drain_buffers(buffers map[string]*bytes.Buffer, basepath string, final bool
 			}
 		}
 
-		// Create the directories if needed.
+		ndrain++
+
+		// Create the parent directories if needed.
 		v := strings.Split(ky, "-")
 		dpath := path.Join(basepath, v[0], v[1], v[2])
 		err := os.MkdirAll(dpath, 0777)
@@ -99,7 +102,6 @@ func drain_buffers(buffers map[string]*bytes.Buffer, basepath string, final bool
 		gid_id := gzip.NewWriter(fid_id)
 
 		svec := va.Bytes()
-		va.Reset()
 		jj := 0
 		for j := 0; j < len(svec)/16; j++ {
 			_, err = gid_id.Write(svec[jj : jj+8])
@@ -112,11 +114,13 @@ func drain_buffers(buffers map[string]*bytes.Buffer, basepath string, final bool
 			}
 			jj += 16
 		}
+		va.Reset()
 		gid_id.Close()
 		gid_vis.Close()
 		fid_id.Close()
 		fid_vis.Close()
 	}
+	fmt.Printf("Drained %d buffers\n", ndrain)
 }
 
 func main() {
@@ -211,9 +215,18 @@ func main() {
 		if mode == village_mode {
 			idv = vals[0]
 		} else if mode == darkspot_mode {
+			// Darkspots are always indexed by coordinates appended like this
 			idv = vals[lat_col] + ":" + vals[lon_col]
 		} else {
 			panic("unrecognized mode")
+		}
+
+		if line_count%10000000 == 0 {
+			pos, _ := fid.Seek(0, os.SEEK_CUR)
+			fmt.Printf("%.5f\n", float64(pos)/float64(fsize))
+		}
+		if line_count%100000000 == 0 {
+			drain_buffers(buffers, basepath, false)
 		}
 
 		// If not in the match file, skip it
@@ -223,20 +236,12 @@ func main() {
 		}
 
 		// Write the id/vis to the buffer as an 8 byte chunk
-		bb := new(bytes.Buffer)
-		binary.Write(bb, binary.LittleEndian, int64(id))
+		binary.Write(buf, binary.LittleEndian, int64(id))
 		vis, err := strconv.ParseFloat(vals[vis_col], 64)
 		if err != nil {
 			panic(err)
 		}
-		binary.Write(bb, binary.LittleEndian, vis)
-		buf.Write([]byte(bb.Bytes()))
-
-		if line_count%10000000 == 0 {
-			pos, _ := fid.Seek(0, os.SEEK_CUR)
-			fmt.Printf("%.5f\n", float64(pos)/float64(fsize))
-			drain_buffers(buffers, basepath, false)
-		}
+		binary.Write(buf, binary.LittleEndian, vis)
 	}
 
 	drain_buffers(buffers, basepath, true)

@@ -55,7 +55,7 @@ func do_chunk(chunk_idx int) {
 		fname := path.Join(date, fmt.Sprintf("%s_%02d.gz", base_filename, chunk_idx))
 		fid, err := os.Open(fname)
 		if err != nil {
-			logger.Print(fmt.Sprintf("Missing date: %s\n", date))
+			logger.Print(fmt.Sprintf("Missing: %s\n", fname))
 			continue
 		}
 		dat, err := ioutil.ReadAll(fid)
@@ -118,8 +118,11 @@ func main() {
 	conf = lights.GetConf(os.Args[1])
 	base_filename = os.Args[2]
 
+	fname := path.Join(conf.Path, "info.json")
+	info := lights.GetInfo(fname)
+
 	// Log errors
-	fname := path.Join(conf.Path, "pivot.log")
+	fname = path.Join(conf.Path, "pivot.log")
 	fid, err := os.Create(fname)
 	if err != nil {
 		panic(err)
@@ -157,7 +160,7 @@ func main() {
 	wtr.Close()
 	fid.Close()
 
-	for chunk_idx := 0; chunk_idx < 30; chunk_idx++ {
+	for chunk_idx := 0; chunk_idx < info.Nchunk; chunk_idx++ {
 		sem <- true
 		wg.Add(1)
 		go do_chunk(chunk_idx)

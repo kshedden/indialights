@@ -184,8 +184,10 @@ func main() {
 	// Limit number of goroutines
 	sem = make(chan bool, 40)
 
+	// Calculate backgrounds in parallel
 	go streamdata(dir_names)
 
+	// Write out the backround data as it becomes ready
 	iq := 0
 	for {
 		if all_sent && iq == nproc {

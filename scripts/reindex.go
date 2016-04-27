@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"compress/gzip"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path"
@@ -61,7 +62,7 @@ func main() {
 	}
 	conf := lights.GetConf(os.Args[1])
 
-	// Handle for writing the unique village ids
+	// File handle for writing the unique village ids
 	fname := path.Join(conf.Path, conf.ViIndexFile)
 	fid, err := os.Create(fname)
 	if err != nil {
@@ -71,7 +72,7 @@ func main() {
 	vi_out := gzip.NewWriter(fid)
 	defer vi_out.Close()
 
-	// Handle for writing the unique darkspot ids
+	// File handle for writing the unique darkspot ids
 	fname = path.Join(conf.Path, conf.DSIndexFile)
 	fid, err = os.Create(fname)
 	if err != nil {
@@ -81,7 +82,7 @@ func main() {
 	ds_out := gzip.NewWriter(fid)
 	defer ds_out.Close()
 
-	// Handle for reading the raw match data
+	// File handle for reading the raw match data
 	fname = path.Join(conf.Path, conf.MatchRawFile)
 	fid, err = os.Open(fname)
 	if err != nil {
@@ -108,10 +109,7 @@ func main() {
 
 	// Array of arrays containing the darkspot ids that are
 	// matched to each village
-	matches := make([][]int64, lights.Nvillage)
-	for i := 0; i < lights.Nvillage; i++ {
-		matches[i] = make([]int64, 0, 20)
-	}
+	matches := make([][]int64, 0)
 
 	// Match counts (village to darkspot and darkspot to village)
 	match_count_vi := make(map[int64]int)
@@ -157,6 +155,9 @@ func main() {
 		}
 
 		// Update the matches
+		if vi_ix >= int64(len(matches)) {
+			matches = append(matches, make([]int64, 0, 20))
+		}
 		matches[vi_ix] = append(matches[vi_ix], ds_ix)
 		line_count++
 
@@ -186,4 +187,23 @@ func main() {
 	fname = path.Join(conf.Path, "darkspot_match_counts.csv.gz")
 	map_to_csv(match_count_ds, fname, "villages")
 	fmt.Printf("Done\n")
+
+	fmt.Printf("Writing info to disk...\n")
+	info := new(lights.Info)
+	info.Nvillage = len(matches)
+	info.Nchunk = len(matches) / conf.ChunkSize
+	if info.Nchunk*conf.ChunkSize < len(matches) {
+		info.Nchunk++
+	}
+	fname = path.Join(conf.Path, "info.json")
+	fid, err = os.Create(fname)
+	if err != nil {
+		panic(err)
+	}
+	b, err := json.Marshal(info)
+	if err != nil {
+		panic(err)
+	}
+	fid.Write(b)
+	fid.Close()
 }

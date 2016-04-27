@@ -28,7 +28,10 @@ func main() {
 	}
 	conf := lights.GetConf(os.Args[1])
 
-	fname := path.Join(conf.Path, "subtract.log")
+	fname := path.Join(conf.Path, "info.json")
+	info := lights.GetInfo(fname)
+
+	fname = path.Join(conf.Path, "subtract.log")
 	fid, err := os.Create(fname)
 	if err != nil {
 		panic(err)
@@ -45,9 +48,7 @@ func main() {
 	for _, dir := range dir_names {
 
 		fmt.Printf("%v\n", dir)
-		chunk_idx := -1
-		for ii := 0; ii < lights.Nvillage; ii += conf.ChunkSize {
-			chunk_idx += 1
+		for chunk_idx := 0; chunk_idx < info.Nchunk; chunk_idx++ {
 
 			wg.Add(1)
 			sem <- true

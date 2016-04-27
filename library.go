@@ -10,11 +10,6 @@ import (
 	"strings"
 )
 
-const (
-	// Would be good to get rid of this
-	Nvillage int = 594980
-)
-
 type Conf struct {
 	Path         string  // Path to all files
 	DSRawFile    string  // Raw dark spot data file
@@ -39,6 +34,11 @@ type Conf struct {
 	MaxMatch     int     // Maximum number of darkspots matched to one village
 	MatchLower   float64 // Lower quantile point for matching, e.g. 0.25 for 25th percentile
 	MatchUpper   float64 // Upper quantile point for matching, e.g. 0.75 for 75th percentile
+}
+
+type Info struct {
+	Nvillage int
+	Nchunk   int
 }
 
 var dir_names_chan chan string
@@ -84,6 +84,26 @@ func GetConf(fname string) Conf {
 		panic(err)
 	}
 	return conf
+}
+
+// Read the configuration file
+func GetInfo(fname string) Info {
+
+	fid, err := os.Open(fname)
+	if err != nil {
+		panic(err)
+	}
+	defer fid.Close()
+	b, err := ioutil.ReadAll(fid)
+	if err != nil {
+		panic(err)
+	}
+	var info Info
+	err = json.Unmarshal(b, &info)
+	if err != nil {
+		panic(err)
+	}
+	return info
 }
 
 // ReadIdx reads a map[string]int64 from the given file (written as

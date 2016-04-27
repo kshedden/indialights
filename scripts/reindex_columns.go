@@ -48,16 +48,19 @@ func process(dname string, n_rec int) {
 		panic(err)
 	}
 
+	// Sanity check
 	if len(ix) != len(vis) {
 		print(dname, "\n")
 		panic("length mismatch")
 	}
 
+	// First fill with NaN
 	rv := make([]float64, n_rec)
 	for i := 0; i < n_rec; i++ {
 		rv[i] = math.NaN()
 	}
 
+	// Insert the observed values in their proper position
 	for i, ii := range ix {
 		rv[ii] = vis[i]
 	}

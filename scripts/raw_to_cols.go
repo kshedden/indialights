@@ -236,12 +236,18 @@ func main() {
 		}
 
 		// Write the id/vis to the buffer as an 8 byte chunk
-		binary.Write(buf, binary.LittleEndian, int64(id))
+		err = binary.Write(buf, binary.LittleEndian, int64(id))
+		if err != nil {
+			panic(err)
+		}
 		vis, err := strconv.ParseFloat(vals[vis_col], 64)
 		if err != nil {
 			panic(err)
 		}
-		binary.Write(buf, binary.LittleEndian, vis)
+		err = binary.Write(buf, binary.LittleEndian, vis)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	drain_buffers(buffers, basepath, true)

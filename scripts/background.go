@@ -195,6 +195,7 @@ func main() {
 		}
 
 		qr := <-comm
+		iq++
 
 		vpath := strings.Replace(qr.path, conf.DSBaseDir, conf.ViBaseDir, 1)
 
@@ -241,11 +242,11 @@ func main() {
 			}
 		}
 
-		if iq%10 == 0 {
-			fmt.Printf("%.5f\n", float64(iq)/float64(7280))
+		if iq%100 == 0 {
+			fmt.Printf("%8.5f", float64(iq)/float64(len(dir_names)))
 		}
-		iq++
 	}
+	fmt.Printf("\n")
 
 	fname = path.Join(conf.Path, "done_background")
 	fid, err = os.Create(fname)

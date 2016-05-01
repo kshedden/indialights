@@ -9,7 +9,7 @@ package main
 // directory, containing the id and vis values respectively.  These
 // values are in arbitrary but corresponding order, e.g. if id = [i1,
 // i2, i3, ...] and vis = [v1, v2, v3, ...] then the vis value for
-// village/darkspot i1 is v1, etc.
+// village/darkspots i1 is v1, etc.
 //
 // Run this program after running reindex
 
@@ -31,7 +31,7 @@ const (
 	// Flush each buffer to disk when it becomes this large.
 	// There are ~8000 buffers (one for each date), so the total
 	// memory used by these buffers is ~8000 * bufsize.
-	bufsize int = 800000
+	bufsize int = 1600000
 )
 
 type mode_type int
@@ -62,71 +62,44 @@ func drain_buffers(buffers map[string]*bytes.Buffer, basepath string, final bool
 			panic(err)
 		}
 
-		dpath_id := path.Join(dpath, "id.gz")
-		dpath_vis := path.Join(dpath, "vis.gz")
-
-		// Open or create the id data file
-		var fid_id *os.File
-		_, err = os.Stat(dpath_id)
+		// Open or create the file
+		dpath_idvis := path.Join(dpath, "idvis.gz")
+		var fid *os.File
+		_, err = os.Stat(dpath_idvis)
 		if os.IsNotExist(err) {
-			fid_id, err = os.Create(dpath_id)
+			fid, err = os.Create(dpath_idvis)
 			if err != nil {
 				panic(err)
 			}
 		} else if err != nil {
 			panic(err)
 		} else {
-			fid_id, err = os.OpenFile(dpath_id, os.O_APPEND|os.O_WRONLY, 0666)
+			// Open file in append mode
+			fid, err = os.OpenFile(dpath_idvis, os.O_APPEND|os.O_WRONLY, 0666)
 			if err != nil {
 				panic(err)
 			}
 		}
+		gid := gzip.NewWriter(fid)
 
-		// Open or create the vis data file
-		var fid_vis *os.File
-		_, err = os.Stat(dpath_vis)
-		if os.IsNotExist(err) {
-			fid_vis, err = os.Create(dpath_vis)
-			if err != nil {
-				panic(err)
-			}
-		} else if err != nil {
-			panic(err)
-		} else {
-			fid_vis, err = os.OpenFile(dpath_vis, os.O_APPEND|os.O_WRONLY, 0666)
-			if err != nil {
-				panic(err)
-			}
-		}
-		gid_vis := gzip.NewWriter(fid_vis)
-		gid_id := gzip.NewWriter(fid_id)
-
+		// Write the data
 		svec := va.Bytes()
-		jj := 0
-		for j := 0; j < len(svec)/16; j++ {
-			_, err = gid_id.Write(svec[jj : jj+8])
-			if err != nil {
-				panic(err)
-			}
-			_, err = gid_vis.Write(svec[jj+8 : jj+16])
-			if err != nil {
-				panic(err)
-			}
-			jj += 16
+		_, err = gid.Write(svec)
+		if err != nil {
+			panic(err)
 		}
 		va.Reset()
-		gid_id.Close()
-		gid_vis.Close()
-		fid_id.Close()
-		fid_vis.Close()
+
+		gid.Close()
+		fid.Close()
 	}
-	fmt.Printf("Drained %d buffers\n", ndrain)
+	fmt.Printf(" Drained %d buffers...", ndrain)
 }
 
 func main() {
 
 	if len(os.Args) != 3 {
-		panic(fmt.Sprintf("usage: %s conf.json [village|darkspot]", os.Args[0]))
+		panic(fmt.Sprintf("usage: %s conf.json [villages|darkspots]", os.Args[0]))
 	}
 	conf := lights.GetConf(os.Args[1])
 
@@ -137,14 +110,14 @@ func main() {
 	var lat_col, lon_col int
 	mode_string := os.Args[2]
 	var mode mode_type
-	if mode_string == "village" {
+	if mode_string == "villages" {
 		indexfname = conf.ViIndexFile
 		rawfname = conf.ViRawFile
 		basepath = conf.ViBaseDir
 		date_col = conf.ViDateCol
 		vis_col = conf.ViVisCol
 		mode = village_mode
-	} else if mode_string == "darkspot" {
+	} else if mode_string == "darkspots" {
 		indexfname = conf.DSIndexFile
 		rawfname = conf.DSRawFile
 		basepath = conf.DSBaseDir
@@ -223,7 +196,7 @@ func main() {
 
 		if line_count%10000000 == 0 {
 			pos, _ := fid.Seek(0, os.SEEK_CUR)
-			fmt.Printf("%.5f\n", float64(pos)/float64(fsize))
+			fmt.Printf("%8.5f", float64(pos)/float64(fsize))
 		}
 		if line_count%100000000 == 0 {
 			drain_buffers(buffers, basepath, false)
@@ -251,4 +224,16 @@ func main() {
 	}
 
 	drain_buffers(buffers, basepath, true)
+
+	// Write empty file to signal completion.
+	if mode == village_mode {
+		fname = path.Join(conf.Path, "raw_villages_done")
+	} else {
+		fname = path.Join(conf.Path, "raw_darkspots_done")
+	}
+	fid, err = os.Create(fname)
+	if err != nil {
+		panic(err)
+	}
+	fid.Close()
 }

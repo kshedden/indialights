@@ -13,7 +13,10 @@ package main
 // Run this program after running raw_to_cols
 
 import (
+	"compress/gzip"
+	"encoding/binary"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"path"
@@ -21,6 +24,13 @@ import (
 
 	lights "github.com/kshedden/indialights"
 	"github.com/kshedden/ziparray"
+)
+
+type mode_type int
+
+const (
+	village_mode  = iota
+	darkspot_mode = iota
 )
 
 var (
@@ -36,23 +46,17 @@ func process(dname string, n_rec int) {
 
 	defer wg.Done()
 
-	fname := path.Join(dname, "vis.gz")
-	vis, err := ziparray.ReadFloat64Array(fname)
+	fname := path.Join(dname, "idvis.gz")
+	fid, err := os.Open(fname)
 	if err != nil {
 		panic(err)
 	}
-
-	fname = path.Join(dname, "id.gz")
-	ix, err := ziparray.ReadInt64Array(fname)
+	defer fid.Close()
+	rdr, err := gzip.NewReader(fid)
 	if err != nil {
 		panic(err)
 	}
-
-	// Sanity check
-	if len(ix) != len(vis) {
-		print(dname, "\n")
-		panic("length mismatch")
-	}
+	defer rdr.Close()
 
 	// First fill with NaN
 	rv := make([]float64, n_rec)
@@ -60,11 +64,24 @@ func process(dname string, n_rec int) {
 		rv[i] = math.NaN()
 	}
 
-	// Insert the observed values in their proper position
-	for i, ii := range ix {
-		rv[ii] = vis[i]
+	// Insert the observed values into their proper positions
+	for {
+		var id int64
+		var vis float64
+		err = binary.Read(rdr, binary.LittleEndian, &id)
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+		err = binary.Read(rdr, binary.LittleEndian, &vis)
+		if err != nil {
+			panic(err)
+		}
+		rv[id] = vis
 	}
 
+	// Write out the arrray in chunks
 	chunk_idx := 0
 	for ii := 0; ii < len(rv); ii += conf.ChunkSize {
 		fname = path.Join(dname, fmt.Sprintf("vis_observed_%02d.gz", chunk_idx))
@@ -80,24 +97,26 @@ func process(dname string, n_rec int) {
 	}
 
 	<-sem
-	fmt.Printf("%v\n", dname)
 }
 
 func main() {
 
 	if len(os.Args) != 3 {
-		panic(fmt.Sprintf("usage: %s conf.json [village|darkspot]", os.Args[0]))
+		panic(fmt.Sprintf("usage: %s conf.json [villages|darkspots]", os.Args[0]))
 	}
 	conf = lights.GetConf(os.Args[1])
 
 	var indexfname string
 	var basepath string
-	if os.Args[2] == "village" {
+	var mode mode_type
+	if os.Args[2] == "villages" {
 		indexfname = conf.ViIndexFile
 		basepath = conf.ViBaseDir
-	} else if os.Args[2] == "darkspot" {
+		mode = village_mode
+	} else if os.Args[2] == "darkspots" {
 		indexfname = conf.DSIndexFile
 		basepath = conf.DSBaseDir
+		mode = darkspot_mode
 	} else {
 		panic(fmt.Sprintf("%s not recognized", os.Args[2]))
 	}
@@ -118,4 +137,16 @@ func main() {
 	}
 
 	wg.Wait()
+
+	// Write empty file to signal completion.
+	if mode == village_mode {
+		fname = path.Join(conf.Path, "reindex_villages_done")
+	} else {
+		fname = path.Join(conf.Path, "reindex_darkspots_done")
+	}
+	fid, err := os.Create(fname)
+	if err != nil {
+		panic(err)
+	}
+	fid.Close()
 }

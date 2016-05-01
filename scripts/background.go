@@ -246,4 +246,11 @@ func main() {
 		}
 		iq++
 	}
+
+	fname = path.Join(conf.Path, "done_background")
+	fid, err = os.Create(fname)
+	if err != nil {
+		panic(err)
+	}
+	fid.Close()
 }

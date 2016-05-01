@@ -46,10 +46,16 @@ func map_to_csv(mp map[int64]int, fname, title string) {
 		panic(err)
 	}
 	wtr := gzip.NewWriter(fid)
-	wtr.Write([]byte(fmt.Sprintf("id,%s\n", title)))
+	_, err = wtr.Write([]byte(fmt.Sprintf("id,%s\n", title)))
+	if err != nil {
+		panic(err)
+	}
 	for k, _ := range keys {
 		v := mp[int64(k)]
-		wtr.Write([]byte(fmt.Sprintf("%d,%d\n", k, v)))
+		_, err = wtr.Write([]byte(fmt.Sprintf("%d,%d\n", k, v)))
+		if err != nil {
+			panic(err)
+		}
 	}
 	wtr.Close()
 	fid.Close()
@@ -124,12 +130,12 @@ func main() {
 		fields := strings.Split(line, ",")
 
 		// Progress report
-		if line_count%1000000 == 0 {
+		if line_count%10000000 == 0 {
 			pos, err := fid.Seek(0, os.SEEK_CUR)
 			if err != nil {
 				panic(err)
 			}
-			fmt.Printf("%12.5f\n", float64(pos)/float64(fsize))
+			fmt.Printf("%7.4f ", float64(pos)/float64(fsize))
 		}
 
 		// Look up the village id, create a new id if needed
@@ -140,7 +146,10 @@ func main() {
 			m := int64(len(village_ids))
 			village_ids[fields[0]] = m
 			vi_ix = m
-			vi_out.Write([]byte(fmt.Sprintf("%d,%s\n", m, fields[0])))
+			_, err = vi_out.Write([]byte(fmt.Sprintf("%d,%s\n", m, fields[0])))
+			if err != nil {
+				panic(err)
+			}
 			match_count_vi[vi_ix] = 0
 		}
 
@@ -150,7 +159,10 @@ func main() {
 			m := int64(len(darkspot_ids))
 			darkspot_ids[fields[1]] = m
 			ds_ix = m
-			ds_out.Write([]byte(fmt.Sprintf("%d,%s\n", m, fields[1])))
+			_, err = ds_out.Write([]byte(fmt.Sprintf("%d,%s\n", m, fields[1])))
+			if err != nil {
+				panic(err)
+			}
 			match_count_ds[ds_ix] = 0
 		}
 
@@ -165,7 +177,7 @@ func main() {
 		match_count_ds[ds_ix]++
 	}
 
-	fmt.Printf("Writing matches to disk...\n")
+	fmt.Printf("\nWriting matches to disk...\n")
 	fname = path.Join(conf.Path, conf.MatchGobFile)
 	fid, err = os.Create(fname)
 	if err != nil {
@@ -204,6 +216,17 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fid.Write(b)
+	_, err = fid.Write(b)
+	if err != nil {
+		panic(err)
+	}
+	fid.Close()
+
+	// Write empty file to signal completion.
+	fname = path.Join(conf.Path, "reindex_done")
+	fid, err = os.Create(fname)
+	if err != nil {
+		panic(err)
+	}
 	fid.Close()
 }

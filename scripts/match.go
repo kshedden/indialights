@@ -135,7 +135,10 @@ func main() {
 		for _, ma := range matches {
 			mav := ma.(*DarkSpot)
 			line := fmt.Sprintf("%s,%s,%.8f,%.8f\n", vi_id[k], mav.idx, vi_lat[k], vi_lon[k])
-			wtr.Write([]byte(line))
+			_, err = wtr.Write([]byte(line))
+			if err != nil {
+				panic(err)
+			}
 		}
 
 		// Progress report

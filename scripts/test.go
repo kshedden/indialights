@@ -146,6 +146,40 @@ func test2() {
 	fmt.Printf("test2 passed\n")
 }
 
+func test3() {
+
+	basepath := conf.ViBaseDir
+	basepath = path.Join(conf.Path, basepath)
+
+	dir_names := lights.GetDirNames(basepath)
+
+	for _, dir := range dir_names {
+
+		fname := path.Join(dir, "vis_observed_00.gz")
+		obs, err := ziparray.ReadFloat64Array(fname)
+		if os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			panic(err)
+		}
+		fname = path.Join(dir, "background_00.gz")
+		bg, err := ziparray.ReadFloat64Array(fname)
+		if os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			panic(err)
+		}
+
+		if len(bg) != len(obs) {
+			panic("unequal!!!!!\n")
+		}
+	}
+
+	fmt.Printf("test 3 passed\n")
+}
+
 func main() {
 
 	if len(os.Args) != 2 {
@@ -155,4 +189,5 @@ func main() {
 
 	test1()
 	test2()
+	test3()
 }

@@ -72,6 +72,8 @@ func do_chunk(chunk_idx int) {
 		defer source[k].Close()
 	}
 
+	bvec := make([]float64, len(dir_names))
+
 	fmt.Printf("Done reading blobs for chunk %d\n", chunk_idx)
 	for vix := 0; ; vix++ {
 		if vix%1000 == 0 {
@@ -79,33 +81,24 @@ func do_chunk(chunk_idx int) {
 		}
 
 		for k, date := range dir_names {
-
 			if source[k] == nil {
-				err = binary.Write(wtr, binary.LittleEndian, math.NaN())
-				if err != nil {
+				bvec[k] = math.NaN()
+			} else {
+				// Read one value from the source
+				err = binary.Read(source[k], binary.LittleEndian, &bvec[k])
+				if err == io.EOF {
+					return
+				} else if err != nil {
 					logger.Print(fmt.Sprintf("village %d within chunk: %d\n", vix, chunk_idx))
 					logger.Printf(fmt.Sprintf("date: %s\n", date))
 					panic(err)
 				}
-				continue
 			}
-
-			// Read one value from a source and write it to a destination
-			var x float64
-			err = binary.Read(source[k], binary.LittleEndian, &x)
-			if err == io.EOF {
-				return
-			} else if err != nil {
-				logger.Print(fmt.Sprintf("village %d within chunk: %d\n", vix, chunk_idx))
-				logger.Printf(fmt.Sprintf("date: %s\n", date))
-				panic(err)
-			}
-			err = binary.Write(wtr, binary.LittleEndian, x)
-			if err != nil {
-				logger.Print(fmt.Sprintf("village within chunk: %d\n", vix))
-				logger.Printf(fmt.Sprintf("date: %s\n", date))
-				panic(err)
-			}
+		}
+		err = binary.Write(wtr, binary.LittleEndian, bvec)
+		if err != nil {
+			logger.Print(fmt.Sprintf("village within chunk: %d\n", vix))
+			panic(err)
 		}
 	}
 }
@@ -167,4 +160,11 @@ func main() {
 	}
 
 	wg.Wait()
+
+	fname = path.Join(conf.Path, fmt.Sprintf("done_%s", base_filename))
+	fid, err = os.Create(fname)
+	if err != nil {
+		panic(err)
+	}
+	fid.Close()
 }

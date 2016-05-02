@@ -248,7 +248,7 @@ func main() {
 	}
 	fmt.Printf("\n")
 
-	fname = path.Join(conf.Path, "done_background")
+	fname = path.Join(conf.Path, "background_done")
 	fid, err = os.Create(fname)
 	if err != nil {
 		panic(err)

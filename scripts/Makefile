@@ -8,55 +8,42 @@ raw_darkspots_done = $(PATH)raw_darkspots_done
 raw_villages_done = $(PATH)raw_villages_done
 background_done = $(PATH)background_done
 subtract_done = $(PATH)subtract_done
+pivot_vis_observed_done = $(PATH)pivot_vis_observed_done
+pivot_background_done = $(PATH)pivot_background_done
+pivot_vis_adjusted_done = $(PATH)pivot_vis_adjusted_done
+pivot_nvalid_done = $(PATH)pivot_nvalid_done
+pivot_bsd_done = $(PATH)pivot_bsd_done
 
-.PHONY: all
+.PHONY: all reindex darkspots_raw villages_raw background subtract
+.PHONY: pivot_vis_observed pivot_background pivot_vis_adjusted pivot_nvalid pivot_bsd
+
 all: reindex raw_darkspots raw_villages background subtract\
 	pivot_vis_observed pivot_nvalid pivot_bsd pivot_vis_adjusted pivot_background
 
-.PHONY: reindex
 reindex: $(reindex_done)
-
-.PHONY: darkspots_raw
 raw_darkspots: $(raw_darkspots_done)
-
-.PHONY: villages_raw
 raw_villages: $(raw_villages_done)
-
-.PHONY: background
 background: $(background_done)
-
-.PHONY: subtract
 subtract: $(subtract_done)
-
-.PHONY: pivot_vis_observed
 pivot_vis_observed: $(pivot_vis_observed_done)
-
-.PHONY: pivot_background
 pivot_background: $(pivot_background_done)
-
-.PHONY: pivot_vis_adjusted
 pivot_vis_adjusted: $(pivot_vis_adjusted_done)
-
-.PHONY: pivot_nvalid
 pivot_nvalid: $(pivot_nvalid_done)
-
-.PHONY: pivot_bsd
 pivot_bsd: $(pivot_bsd_done)
 
 
-.PHONY: clean_darkspots
+.PHONY: clean_darkspots clean_villages clean
+
 clean_darkspots:
 	/bin/rm -rf $(PATH)darkspots
 	/bin/rm -f $(PATH)raw_darkspots_done
 	/bin/rm -f $(PATH)reindex_darkspots_done
 
-.PHONY: clean_villages
 clean_villages:
 	/bin/rm -rf $(PATH)villages
 	/bin/rm -f $(PATH)reindex_darkspots_done
 	/bin/rm -f $(PATH)reindex_villages_done
 
-.PHONY: clean
 clean: clean_darkspots clean_villages
 	/bin/rm -rf $(PATH)matches.gob.gz
 	/bin/rm -rf $(PATH)reindex_done

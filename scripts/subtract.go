@@ -98,7 +98,7 @@ func main() {
 	wg.Wait()
 
 	// Write empty file to signal completion.
-	fname = path.Join(conf.Path, "done_subtract")
+	fname = path.Join(conf.Path, "subtract_done")
 	fid, err = os.Create(fname)
 	if err != nil {
 		panic(err)

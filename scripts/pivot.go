@@ -161,7 +161,7 @@ func main() {
 
 	wg.Wait()
 
-	fname = path.Join(conf.Path, fmt.Sprintf("done_%s", base_filename))
+	fname = path.Join(conf.Path, fmt.Sprintf("pivot_%s_done", base_filename))
 	fid, err = os.Create(fname)
 	if err != nil {
 		panic(err)

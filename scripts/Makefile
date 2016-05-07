@@ -3,6 +3,7 @@ GO = /data/kshedden/go/bin/go
 CONFIG = config10k.json
 
 indat = $(PATH)dark_samp_10k_data.csv.gz $(PATH)latest_good_vis_9315.csv.gz
+match_done = $(PATH)match_done
 reindex_done = $(PATH)reindex_done
 raw_darkspots_done = $(PATH)raw_darkspots_done
 raw_villages_done = $(PATH)raw_villages_done
@@ -17,9 +18,10 @@ pivot_bsd_done = $(PATH)pivot_bsd_done
 .PHONY: all reindex darkspots_raw villages_raw background subtract
 .PHONY: pivot_vis_observed pivot_background pivot_vis_adjusted pivot_nvalid pivot_bsd
 
-all: reindex raw_darkspots raw_villages background subtract\
+all: match reindex raw_darkspots raw_villages background subtract\
 	pivot_vis_observed pivot_nvalid pivot_bsd pivot_vis_adjusted pivot_background
 
+match: $(match_done)
 reindex: $(reindex_done)
 raw_darkspots: $(raw_darkspots_done)
 raw_villages: $(raw_villages_done)
@@ -48,7 +50,10 @@ clean: clean_darkspots clean_villages
 	/bin/rm -rf $(PATH)matches.gob.gz
 	/bin/rm -rf $(PATH)reindex_done
 
-$(reindex_done): $(indat)
+$(match_done): $(indat)
+	$(GO) run match.go $(CONFIG)
+
+$(reindex_done): $(match_done)
 	$(GO) run reindex.go $(CONFIG)
 
 $(raw_darkspots_done): $(reindex_done)

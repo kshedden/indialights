@@ -11,29 +11,86 @@ import (
 )
 
 type Conf struct {
-	Path         string  // Path to all files
-	DSRawFile    string  // Raw dark spot data file
-	DSDateCol    int     // Column of dates in raw DS file
-	DSVisCol     int     // Column of vis values in raw DS file
-	DSLatCol     int     // Column of latitude value in raw DS file
-	DSLonCol     int     // Column of longitude value in raw DS file
-	ViRawFile    string  // Village data raw file
-	ViDateCol    int     // Column of dates in raw village file
-	ViVisCol     int     // Column of vis values in raw village file
-	ViIdCol      int     // Column of village identifier in raw village file
-	MatchRawFile string  // Raw matches data file
-	MatchGobFile string  // Dark spot to village matches
-	DSIndexFile  string  // Place to store the dark spot id's in order
-	ViIndexFile  string  // Place to store the village id's in order
-	ViInfoFile   string  // Geographical information about villages
-	DSLatLonFile string  // Raw csv file containing coordinates of dark spots
-	DSBaseDir    string  // Directory for dark spot data
-	ViBaseDir    string  // Diretory for village data
-	TSDir        string  // Directory for final time series results
-	ChunkSize    int     // Number of villages per chunk
-	MaxMatch     int     // Maximum number of darkspots matched to one village
-	MatchLower   float64 // Lower quantile point for matching, e.g. 0.25 for 25th percentile
-	MatchUpper   float64 // Upper quantile point for matching, e.g. 0.75 for 75th percentile
+	// Path to all files
+	Path string
+
+	// Raw dark spot data file
+	DSRawFile string
+
+	// Column of dates in raw DS file
+	DSDateCol int
+
+	// Column of vis values in raw DS file
+	DSVisCol int
+
+	// Column of latitude value in raw DS file
+	DSLatCol int
+
+	// Column of longitude value in raw DS file
+	DSLonCol int
+
+	// Village data raw file
+	ViRawFile string
+
+	// Column of dates in raw village file
+	ViDateCol int
+
+	// Column of vis values in raw village file
+	ViVisCol int
+
+	// Column of village identifier in raw village file
+	ViIdCol int
+
+	// Raw matches data file
+	MatchRawFile string
+
+	// Dark spot to village matches
+	MatchGobFile string
+
+	// Place to store the dark spot id's in order
+	DSIndexFile string
+
+	// Place to store the village id's in order
+	ViIndexFile string
+
+	// Geographical information about villages
+	ViInfoFile string
+
+	// Raw csv file containing coordinates of dark spots
+	DSLatLonFile string
+
+	// Directory for dark spot data
+	DSBaseDir string
+
+	// Diretory for village data
+	ViBaseDir string
+
+	// Directory for final time series results
+	TSDir string
+
+	// Number of villages per chunk
+	ChunkSize int
+
+	// Maximum number of darkspots matched to one village
+	MaxMatch int
+
+	// Lower quantile point for matching, e.g. 0.25 for 25th percentile
+	MatchLower float64
+
+	// Upper quantile point for matching, e.g. 0.75 for 75th percentile
+	MatchUpper float64
+
+	// Initial matching identifies stations within +/- LatTol
+	// degrees latitude
+	LatTol float64
+
+	// Initial matching identifies stations within +/- LonTol
+	// degrees longitude
+	LonTol float64
+
+	// Darkspot matches must be within this geodesic distance of
+	// this geodesic distance of the target village
+	MTol float64
 }
 
 type Info struct {

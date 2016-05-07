@@ -17,17 +17,12 @@ import (
 
 	"github.com/dhconnelly/rtreego"
 	lights "github.com/kshedden/indialights"
+	"github.com/paulmach/go.geo"
 )
 
 const (
 	// Small box at each darkspot
-	tol = 0.01
-
-	// Search for matches within this latitude (+/-)
-	lat_tol = 2.5
-
-	// Search for matches within this longitude (+/-)
-	lon_tol = 2.5
+	etol = 0.01
 )
 
 var (
@@ -89,8 +84,8 @@ type DarkSpot struct {
 
 func (s *DarkSpot) Bounds() *rtreego.Rect {
 	// define the bounds of s to be a rectangle centered at s.location
-	// with side lengths 2 * tol:
-	return s.location.ToRect(tol)
+	// with side lengths 2 * etol:
+	return s.location.ToRect(etol)
 }
 
 func main() {
@@ -126,14 +121,23 @@ func main() {
 	// Query for each village
 	for k := 0; k < len(vi_lat); k++ {
 
-		point := rtreego.Point{vi_lat[k] - lat_tol, vi_lon[k] - lon_tol}
-		lengths := []float64{2 * lat_tol, 2 * lon_tol}
+		point := rtreego.Point{vi_lat[k] - conf.LatTol, vi_lon[k] - conf.LonTol}
+		lengths := []float64{2 * conf.LonTol, 2 * conf.LonTol}
 		bb, _ := rtreego.NewRect(point, lengths)
 
 		matches := rt.SearchIntersect(bb)
 
+		vi_pt := geo.NewPointFromLatLng(vi_lat[k], vi_lon[k])
+
 		for _, ma := range matches {
 			mav := ma.(*DarkSpot)
+
+			ds_pt := geo.NewPointFromLatLng(mav.location[0], mav.location[1])
+			dis := vi_pt.GeoDistanceFrom(ds_pt, true)
+			if dis > conf.MTol {
+				continue
+			}
+
 			line := fmt.Sprintf("%s,%s,%.8f,%.8f\n", vi_id[k], mav.idx, vi_lat[k], vi_lon[k])
 			_, err = wtr.Write([]byte(line))
 			if err != nil {

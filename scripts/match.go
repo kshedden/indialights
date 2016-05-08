@@ -146,8 +146,8 @@ func main() {
 		}
 
 		// Progress report
-		if k%1000 == 0 {
-			fmt.Printf("%.4f\n", float64(k)/float64(len(vi_lat)))
+		if k%10000 == 0 {
+			fmt.Printf("%7.4f", float64(k)/float64(len(vi_lat)))
 		}
 	}
 }

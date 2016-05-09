@@ -1,21 +1,28 @@
-PATH = /data/kshedden/Zach_OKeefe/10k/
-GO = /data/kshedden/go/bin/go
+DPATH = /nfs/brianmin/work/kshedden/india-10k-new/
+export GOROOT = /nfs/brianmin/work/kshedden/go/
+export GOPATH = /nfs/brianmin/work/kshedden/fluxrun/
+GO = $(GOROOT)bin/go
 CONFIG = config10k.json
 
-indat = $(PATH)dark_samp_10k_data.csv.gz $(PATH)latest_good_vis_9315.csv.gz
-match_done = $(PATH)match_done
-reindex_done = $(PATH)reindex_done
-raw_darkspots_done = $(PATH)raw_darkspots_done
-raw_villages_done = $(PATH)raw_villages_done
-background_done = $(PATH)background_done
-subtract_done = $(PATH)subtract_done
-pivot_vis_observed_done = $(PATH)pivot_vis_observed_done
-pivot_background_done = $(PATH)pivot_background_done
-pivot_vis_adjusted_done = $(PATH)pivot_vis_adjusted_done
-pivot_nvalid_done = $(PATH)pivot_nvalid_done
-pivot_bsd_done = $(PATH)pivot_bsd_done
+DS_VIS_RAW = dark_samp_10k_data.csv.gz
+VI_VIS_RAW = latest_good_vis_9315.csv.gz
 
-.PHONY: all reindex darkspots_raw villages_raw background subtract
+indat = $(DPATH)$(DS_VIS_RAW) $(DPATH)$(VI_VIS_RAW)
+match_done = $(DPATH)match_done
+reindex_done = $(DPATH)reindex_done
+raw_darkspots_done = $(DPATH)raw_darkspots_done
+raw_villages_done = $(DPATH)raw_villages_done
+background_done = $(DPATH)background_done
+subtract_done = $(DPATH)subtract_done
+pivot_vis_observed_done = $(DPATH)pivot_vis_observed_done
+pivot_background_done = $(DPATH)pivot_background_done
+pivot_vis_adjusted_done = $(DPATH)pivot_vis_adjusted_done
+pivot_nvalid_done = $(DPATH)pivot_nvalid_done
+pivot_bsd_done = $(DPATH)pivot_bsd_done
+
+GOCMD = $(GOPATH)/src/github.com/kshedden/indialights/scripts/
+
+.PHONY: setup all reindex darkspots_raw villages_raw background subtract
 .PHONY: pivot_vis_observed pivot_background pivot_vis_adjusted pivot_nvalid pivot_bsd
 
 all: match reindex raw_darkspots raw_villages background subtract\
@@ -33,54 +40,58 @@ pivot_vis_adjusted: $(pivot_vis_adjusted_done)
 pivot_nvalid: $(pivot_nvalid_done)
 pivot_bsd: $(pivot_bsd_done)
 
+setup:
+	$(GO) get -u github.com/kshedden/indialights
+	$(GO) get -u github.com/kshedden/ziparray
+	$(GO) get -u github.com/paulmach/go.geo
 
 .PHONY: clean_darkspots clean_villages clean
 
 clean_darkspots:
-	/bin/rm -rf $(PATH)darkspots
-	/bin/rm -f $(PATH)raw_darkspots_done
-	/bin/rm -f $(PATH)reindex_darkspots_done
+	/bin/rm -rf $(DPATH)darkspots
+	/bin/rm -f $(DPATH)raw_darkspots_done
+	/bin/rm -f $(DPATH)reindex_darkspots_done
 
 clean_villages:
-	/bin/rm -rf $(PATH)villages
-	/bin/rm -f $(PATH)reindex_darkspots_done
-	/bin/rm -f $(PATH)reindex_villages_done
+	/bin/rm -rf $(DPATH)villages
+	/bin/rm -f $(DPATH)reindex_darkspots_done
+	/bin/rm -f $(DPATH)reindex_villages_done
 
 clean: clean_darkspots clean_villages
-	/bin/rm -rf $(PATH)matches.gob.gz
-	/bin/rm -rf $(PATH)reindex_done
+	/bin/rm -rf $(DPATH)matches.gob.gz
+	/bin/rm -rf $(DPATH)reindex_done
 
 $(match_done): $(indat)
-	$(GO) run match.go $(CONFIG)
+	$(GO) run $(GOCMD)match.go $(CONFIG)
 
 $(reindex_done): $(match_done)
-	$(GO) run reindex.go $(CONFIG)
+	$(GO) run $(GOCMD)reindex.go $(CONFIG)
 
 $(raw_darkspots_done): $(reindex_done)
-	$(GO) run raw_to_cols.go $(CONFIG) darkspots
-	$(GO) run reindex_columns.go $(CONFIG) darkspots
+	$(GO) run $(GOCMD)raw_to_cols.go $(CONFIG) darkspots
+	$(GO) run $(GOCMD)reindex_columns.go $(CONFIG) darkspots
 
 $(raw_villages_done): $(reindex_done)
-	$(GO) run raw_to_cols.go $(CONFIG) villages
-	$(GO) run reindex_columns.go $(CONFIG) villages
+	$(GO) run $(GOCMD)raw_to_cols.go $(CONFIG) villages
+	$(GO) run $(GOCMD)reindex_columns.go $(CONFIG) villages
 
 $(background_done): $(raw_darkspots_done) $(raw_villages_done)
-	$(GO) run background.go $(CONFIG)
+	$(GO) run $(GOCMD)background.go $(CONFIG)
 
 $(subtract_done): $(background_done)
-	$(GO) run subtract.go $(CONFIG)
+	$(GO) run $(GOCMD)subtract.go $(CONFIG)
 
 $(pivot_vis_observed_done): $(subtract_done)
-	$(GO) run pivot.go $(CONFIG) vis_observed
+	$(GO) run $(GOCMD)pivot.go $(CONFIG) vis_observed
 
 $(pivot_background_done): $(subtract_done)
-	$(GO) run pivot.go $(CONFIG) background
+	$(GO) run $(GOCMD)pivot.go $(CONFIG) background
 
 $(pivot_nvalid_done): $(subtract_done)
-	$(GO) run pivot.go $(CONFIG) nvalid
+	$(GO) run $(GOCMD)pivot.go $(CONFIG) nvalid
 
 $(pivot_bsd_done): $(subtract_done)
-	$(GO) run pivot.go $(CONFIG) bsd
+	$(GO) run $(GOCMD)pivot.go $(CONFIG) bsd
 
 $(pivot_vis_adjusted_done): $(subtract_done)
-	$(GO) run pivot.go $(CONFIG) vis_adjusted
+	$(GO) run $(GOCMD)pivot.go $(CONFIG) vis_adjusted

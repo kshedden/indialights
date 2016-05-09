@@ -1,11 +1,27 @@
+# Directory where all data are located, and all results are placed
 DPATH = /nfs/brianmin/work/kshedden/india-10k-new/
-export GOROOT = /nfs/brianmin/work/kshedden/go/
-export GOPATH = /nfs/brianmin/work/kshedden/fluxrun/
-GO = $(GOROOT)bin/go
+
+# Name of the config file passed to all scripts
 CONFIG = config10k.json
 
+# Name of the darkspots vis raw data file (must be a file in DPATH)
 DS_VIS_RAW = dark_samp_10k_data.csv.gz
+
+# Name of the village vis raw data file (must be a file in DPATH)
 VI_VIS_RAW = latest_good_vis_9315.csv.gz
+
+# Path to the Go installation
+export GOROOT = /nfs/brianmin/work/kshedden/go/
+
+# Path to the Go projects directory
+export GOPATH = /nfs/brianmin/work/kshedden/fluxrun/
+
+
+#
+# Users should not need to edit below this point
+#
+
+GO = $(GOROOT)bin/go
 
 indat = $(DPATH)$(DS_VIS_RAW) $(DPATH)$(VI_VIS_RAW)
 match_done = $(DPATH)match_done

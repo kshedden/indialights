@@ -150,4 +150,5 @@ func main() {
 			fmt.Printf("%7.4f", float64(k)/float64(len(vi_lat)))
 		}
 	}
+	fmt.Printf("\nDone\n")
 }

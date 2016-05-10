@@ -60,6 +60,7 @@ setup:
 	$(GO) get -u github.com/kshedden/indialights
 	$(GO) get -u github.com/kshedden/ziparray
 	$(GO) get -u github.com/paulmach/go.geo
+	$(GO) get -u github.com/dhconnelly/rtreego
 
 .PHONY: clean_darkspots clean_villages clean
 

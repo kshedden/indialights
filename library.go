@@ -44,6 +44,12 @@ type Conf struct {
 	// Raw matches data file
 	MatchRawFile string
 
+	// Column in MatchRawFile containing village id
+	MatchViIdCol int
+
+	// Column in MatchRawFile containing darkspot id
+	MatchDSIdCol int
+
 	// Dark spot to village matches
 	MatchGobFile string
 

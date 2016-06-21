@@ -22,12 +22,17 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"sort"
 	"strings"
 
 	lights "github.com/kshedden/indialights"
+)
+
+var (
+	logger *log.Logger
 )
 
 // map_to_csv writes a string->int map to a csv file
@@ -68,9 +73,17 @@ func main() {
 	}
 	conf := lights.GetConf(os.Args[1])
 
-	// File handle for writing the unique village ids
-	fname := path.Join(conf.Path, conf.ViIndexFile)
+	// Set up a logger
+	fname := path.Join(conf.Path, "reindex.log")
 	fid, err := os.Create(fname)
+	if err != nil {
+		panic(err)
+	}
+	logger = log.New(fid, "", log.Lshortfile)
+
+	// File handle for writing the unique village ids
+	fname = path.Join(conf.Path, conf.ViIndexFile)
+	fid, err = os.Create(fname)
 	if err != nil {
 		panic(err)
 	}
@@ -138,32 +151,44 @@ func main() {
 			fmt.Printf("%7.4f ", float64(pos)/float64(fsize))
 		}
 
+		// Check for file malformation
+		if conf.MatchDSIdCol >= len(fields) {
+			msg := fmt.Sprintf("Skipping incomplete line %d in %s\n", line_count, conf.MatchRawFile)
+			logger.Print(msg)
+			continue
+		}
+		if conf.MatchViIdCol >= len(fields) {
+			msg := fmt.Sprintf("Skipping incomplete line %d in %s\n", line_count, conf.MatchRawFile)
+			logger.Print(msg)
+			continue
+		}
+
 		// Look up the village id, create a new id if needed
 		var vi_ix, ds_ix int64
 		var ok bool
-		vi_ix, ok = village_ids[fields[0]]
+		vid := fields[conf.MatchViIdCol]
+		vi_ix, ok = village_ids[vid]
 		if !ok {
 			m := int64(len(village_ids))
-			village_ids[fields[0]] = m
+			village_ids[vid] = m
 			vi_ix = m
-			_, err = vi_out.Write([]byte(fmt.Sprintf("%d,%s\n", m, fields[0])))
+			_, err = vi_out.Write([]byte(fmt.Sprintf("%d,%s\n", m, vid)))
 			if err != nil {
 				panic(err)
 			}
-			match_count_vi[vi_ix] = 0
 		}
 
 		// Look up the darkspot id, create a new one if needed
-		ds_ix, ok = darkspot_ids[fields[1]]
+		dsid := fields[conf.MatchDSIdCol]
+		ds_ix, ok = darkspot_ids[dsid]
 		if !ok {
 			m := int64(len(darkspot_ids))
-			darkspot_ids[fields[1]] = m
+			darkspot_ids[dsid] = m
 			ds_ix = m
-			_, err = ds_out.Write([]byte(fmt.Sprintf("%d,%s\n", m, fields[1])))
+			_, err = ds_out.Write([]byte(fmt.Sprintf("%d,%s\n", m, dsid)))
 			if err != nil {
 				panic(err)
 			}
-			match_count_ds[ds_ix] = 0
 		}
 
 		// Update the matches

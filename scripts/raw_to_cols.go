@@ -186,7 +186,7 @@ func main() {
 
 		var idv string
 		if mode == village_mode {
-			idv = vals[0]
+			idv = vals[conf.ViIdCol]
 		} else if mode == darkspot_mode {
 			// Darkspots are always indexed by coordinates appended like this
 			idv = vals[lat_col] + ":" + vals[lon_col]
